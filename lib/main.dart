@@ -1,125 +1,488 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import for clipboard handling
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(CalculatorApp());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class CalculatorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Responsive Calculator',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: CalculatorHome(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class CalculatorHome extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _CalculatorHomeState createState() => _CalculatorHomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _CalculatorHomeState extends State<CalculatorHome> {
+  int _numberOfFields = 1; // Start with one field
+  int _selectedWindow = 1; // 1, 2, or 3
 
-  void _incrementCounter() {
+  String _output1 = "0";
+  String _output2 = "0";
+  String _output3 = "0";
+
+  String _result1 = "0";
+  String _result2 = "0";
+  String _result3 = "0";
+
+  String _operation = "";
+  double _num1 = 0;
+  double _num2 = 0;
+
+  void buttonPressed(String buttonText) {
+    String _currentOutput;
+
+    if (_selectedWindow == 1) {
+      _currentOutput = _output1;
+    } else if (_selectedWindow == 2) {
+      _currentOutput = _output2;
+    } else {
+      _currentOutput = _output3;
+    }
+
+    if (buttonText == "C") {
+      _output1 = "0";
+      _output2 = "0";
+      _output3 = "0";
+      _result1 = "0";
+      _result2 = "0";
+      _result3 = "0";
+      _num1 = 0;
+      _num2 = 0;
+      _operation = "";
+    } else if (buttonText == "+" ||
+        buttonText == "-" ||
+        buttonText == "*" ||
+        buttonText == "/") {
+      _num1 = double.parse(_currentOutput);
+      _operation = buttonText;
+      _currentOutput = "0";
+    } else if (buttonText == ".") {
+      if (_currentOutput.contains(".")) {
+        return;
+      } else {
+        _currentOutput = _currentOutput + buttonText;
+      }
+    } else if (buttonText == "=") {
+      _num2 = double.parse(_currentOutput);
+
+      if (_operation == "+") {
+        _currentOutput = (_num1 + _num2).toString();
+      } else if (_operation == "-") {
+        _currentOutput = (_num1 - _num2).toString();
+      } else if (_operation == "*") {
+        _currentOutput = (_num1 * _num2).toString();
+      } else if (_operation == "/") {
+        _currentOutput = (_num1 / _num2).toString();
+      }
+
+      _operation = "";
+    } else {
+      _currentOutput = _currentOutput + buttonText;
+    }
+
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      if (_selectedWindow == 1) {
+        _output1 = _currentOutput;
+        _result1 = double.parse(_output1).toStringAsFixed(2);
+      } else if (_selectedWindow == 2) {
+        _output2 = _currentOutput;
+        _result2 = double.parse(_output2).toStringAsFixed(2);
+      } else {
+        _output3 = _currentOutput;
+        _result3 = double.parse(_output3).toStringAsFixed(2);
+      }
     });
+  }
+
+  Widget buildButton(String buttonText, Color color) {
+    return Expanded(
+      child: Container(
+        height: 70,
+        width: 71,// Set the desired height
+        padding: const EdgeInsets.symmetric(vertical: 6 , horizontal: 7),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0), // Set the desired border radius
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.30), // Shadow color
+              spreadRadius: 0, // Spread radius
+              blurRadius: 5, // Blur radius
+              offset: Offset(0, 6), // Offset in the X and Y direction
+            ),
+          ],
+        ),// Adjust the padding around the button
+        child: FilledButton(
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all<Color>(color),
+            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0), // Set the desired border radius
+              ),
+            ),
+            padding: MaterialStateProperty.all<EdgeInsets>(
+              EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0), // Adjust the padding inside the button
+            ),
+          ),
+          onPressed: () => buttonPressed(buttonText),
+          child: Text(
+            buttonText,
+            style: TextStyle(fontSize: 20, color: Color(0xFFffffff)),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget buildResultWindow(String result, int windowNumber) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 18), // Add padding around the container
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedWindow = windowNumber; // Update the selected window
+          });
+        },
+        onLongPress: () {
+          _copyToClipboard(result); // Copy result to clipboard on long press
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Color(0xFF1A1926),
+            borderRadius: BorderRadius.circular(12.0), // Rounded corners
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3), // Shadow color
+                spreadRadius: 2, // Spread radius
+                blurRadius: 6, // Blur radius
+                offset: Offset(0, 4), // Offset in the Y direction to make shadow appear below
+              ),
+            ],
+            border: _selectedWindow == windowNumber ? Border.all(
+              color: Color(0xFF563887), // Border color
+              width: 2.0, // Border width
+            ) : Border.all(
+              color: Color(0xFF1A1926), // Border color
+              width: 2.0, // Border width
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center, // Align children vertically
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, // Align all children to the left
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min, // Make the row as small as possible
+                      children: [
+                        InkWell(
+                          onTap: () => _pasteFromClipboard(windowNumber),
+                          child: Icon(Icons.paste, size: 17,),
+                        ),
+                        SizedBox(width: 8), // Add space between icons
+                        InkWell(
+                          onTap: () => _copyToClipboard(result),
+                          child: Icon(Icons.copy, size: 17),
+                        ),
+                      ],
+                    ),
+                    if (_numberOfFields > 1)
+                      SizedBox(height: 20),
+                    if (_numberOfFields > 1)// Space between icons and close button
+                    Align(
+                      alignment: Alignment.centerLeft, // Align close button to the left
+                      child: InkWell(
+                        onTap: () => removeField(windowNumber),
+                        child: Icon(Icons.close, size: 17),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  // Make the text take the remaining space
+                  child: Container(
+                    alignment: Alignment.bottomRight, // Align container's content to bottom right
+                    child: Baseline(
+                      baseline: 50.0, // Adjust the baseline value as needed
+                      baselineType: TextBaseline.alphabetic,
+                      child: Text(
+                        result,
+                        style: TextStyle(
+                          fontSize: 35,
+                        ),
+                        textAlign: TextAlign.right, // Align text to the right
+                        overflow: TextOverflow.clip,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+
+  void addField() {
+    if (_numberOfFields < 3) {
+      setState(() {
+        _numberOfFields += 1;
+      });
+    }
+  }
+
+  void removeField(int windowNumber) {
+    setState(() {
+      if (windowNumber == 1) {
+        _output1 = _output2;
+        _result1 = _result2;
+        _output2 = _output3;
+        _result2 = _result3;
+        _output3 = "0";
+        _result3 = "0";
+      } else if (windowNumber == 2) {
+        _output2 = _output3;
+        _result2 = _result3;
+        _output3 = "0";
+        _result3 = "0";
+      }
+      _numberOfFields -= 1;
+      _selectedWindow = 1; // Reset selected window to the first one
+    });
+  }
+
+  // Method to copy text to the clipboard
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Copied to clipboard")),
+    );
+  }
+
+  // Method to paste text from the clipboard into a specific result window
+  void _pasteFromClipboard(int windowNumber) async {
+    ClipboardData? clipboardData = await Clipboard.getData('text/plain');
+    if (clipboardData != null) {
+      String clipboardText = clipboardData.text ?? "0";
+
+      // Validate if the clipboard text is a valid double
+      try {
+        double parsedValue = double.parse(clipboardText);
+
+        setState(() {
+          if (windowNumber == 1) {
+            _output1 = parsedValue.toString();
+            _result1 = parsedValue.toStringAsFixed(2);
+          } else if (windowNumber == 2) {
+            _output2 = parsedValue.toString();
+            _result2 = parsedValue.toStringAsFixed(2);
+          } else {
+            _output3 = parsedValue.toString();
+            _result3 = parsedValue.toStringAsFixed(2);
+          }
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Invalid number format in clipboard")),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Check if in landscape mode
+          bool isLandscape = constraints.maxWidth > 600;
+
+          return isLandscape
+              ? Row(
+                  children: [
+                    // Left side: Result windows and add button
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        children: <Widget>[
+                          if (_numberOfFields >= 1)
+                            buildResultWindow(_result1, 1),
+                          if (_numberOfFields >= 2)
+                            buildResultWindow(_result2, 2),
+                          if (_numberOfFields >= 3)
+                            buildResultWindow(_result3, 3),
+                          if (_numberOfFields < 3)
+                            ElevatedButton(
+                              onPressed: addField,
+                              child: Text("Add Field"),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Right side: Calculator buttons
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        /*children: [
+                          Row(
+                            children: <Widget>[
+                              buildButton("7"),
+                              buildButton("8"),
+                              buildButton("9"),
+                              buildButton("/")
+                            ],
+                          ),
+                          Row(
+                            children: <Widget>[
+                              buildButton("4"),
+                              buildButton("5"),
+                              buildButton("6"),
+                              buildButton("*")
+                            ],
+                          ),
+                          Row(
+                            children: <Widget>[
+                              buildButton("1"),
+                              buildButton("2"),
+                              buildButton("3"),
+                              buildButton("-")
+                            ],
+                          ),
+                          Row(
+                            children: <Widget>[
+                              buildButton("."),
+                              buildButton("0"),
+                              buildButton("00"),
+                              buildButton("+")
+                            ],
+                          ),
+                          Row(
+                            children: <Widget>[
+                              buildButton("C"),
+                              buildButton("="),
+                            ],
+                          ),
+                        ],*/
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: <Widget>[
+                    Spacer(),
+                    if (_numberOfFields < 3)
+                      Row(
+                          children: [
+                            Spacer(),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 18), // Adjust margin around the button
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF311F4F), // Set background color
+                                  borderRadius: BorderRadius.circular(10.0), // Change border radius
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3), // Shadow color with opacity
+                                      spreadRadius: 2, // Spread radius
+                                      blurRadius: 6, // Blur radius
+                                      offset: Offset(2, 4), // Offset in the X and Y direction
+                                    ),
+                                  ],
+                                ),
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent, // Make button background transparent to show container color
+                                    padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0), // Adjust padding inside the button
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0), // Change border radius
+                                    ),
+                                  ),
+                                  onPressed: addField,
+                                  child: Text(
+                                    "+ Add",
+                                    style: TextStyle(fontSize: 16, color: Colors.white), // Adjust font size
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ])
+                    ,
+                    if (_numberOfFields >= 1) buildResultWindow(_result1, 1),
+                    if (_numberOfFields >= 2) buildResultWindow(_result2, 2),
+                    if (_numberOfFields >= 3) buildResultWindow(_result3, 3),
+
+
+                    SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB( 15,  10,  15, 45), // Adjust padding as needed
+                      child: Column(
+                      children: [
+                        Row(
+                          children: <Widget>[
+                            buildButton("7", Color(0xFF2E2C43)),
+                            buildButton("8", Color(0xFF2E2C43)),
+                            buildButton("9", Color(0xFF2E2C43)),
+                            buildButton("/", Color(0xFF311F4F))
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            buildButton("4", Color(0xFF1C1A29)),
+                            buildButton("5", Color(0xFF1C1A29)),
+                            buildButton("6",Color(0xFF1C1A29)),
+                            buildButton("*", Color(0xFF311F4F))
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            buildButton("1", Color(0xFF1C1A29)),
+                            buildButton("2", Color(0xFF1C1A29)),
+                            buildButton("3", Color(0xFF1C1A29)),
+                            buildButton("-", Color(0xFF311F4F))
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            buildButton(".", Color(0xFF1C1A29)),
+                            buildButton("0", Color(0xFF1C1A29)),
+                            buildButton("00", Color(0xFF1C1A29)),
+                            buildButton("+", Color(0xFF311F4F))
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            buildButton("C", Color(0xFF1C1A29)),
+                            buildButton("=", Color(0xFF1C1A29)),
+                            buildButton("C", Color(0xFF1C1A29)),
+                            buildButton("=", Color(0xFF311F4F)),
+                          ],
+                        ),
+                      ],
+                    ))
+                  ],
+                );
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
